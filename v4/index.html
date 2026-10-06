@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>打字練習 v4 - ASDFGHJKL; 掉落挑戰</title>
+    <style>
+        :root {
+            --bg-color: #1e1e2e;
+            --panel-bg: rgba(30, 30, 46, 0.75);
+            --card-bg: #2b2b3d;
+            --primary: #89b4fa;
+            --success: #a6e3a1;
+            --danger: #f38ba8;
+            --text: #cdd6f4;
+            --subtext: #a6adc8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        header {
+            width: 100%;
+            max-width: 800px;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .back-btn {
+            background-color: var(--card-bg);
+            color: var(--text);
+            border: 1px solid var(--subtext);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background-color: var(--primary);
+            color: var(--bg-color);
+        }
+
+        .dashboard {
+            display: flex;
+            gap: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .game-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            flex-grow: 1;
+            margin-bottom: 20px;
+            border: 2px solid var(--subtext);
+            border-radius: 12px;
+            background: linear-gradient(180deg, rgba(24, 24, 37, 0.8) 0%, rgba(17, 17, 27, 0.9) 100%);
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .deadline {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 40px;
+            background-color: rgba(243, 139, 168, 0.2);
+            border-top: 2px dashed var(--danger);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--danger);
+            font-size: 12px;
+            letter-spacing: 2px;
+        }
+
+        .falling-char {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background-color: var(--primary);
+            color: var(--bg-color);
+            font-size: 28px;
+            font-weight: bold;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(137, 180, 250, 0.4);
+            transform: translateX(-50%);
+            top: 0;
+            left: 50%;
+        }
+
+        .control-panel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            z-index: 20;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+
+        .control-panel h2 {
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        .setting-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .setting-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: var(--subtext);
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex-grow: 1;
+            accent-color: var(--primary);
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .checkbox-container input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        .start-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            color: var(--bg-color);
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+
+        .start-btn:hover {
+            background-color: #b4befe;
+            transform: scale(1.02);
+        }
+
+        .result-stats {
+            margin: 15px 0;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="../index.html" class="back-btn">← 回首頁</a>
+        <div class="dashboard">
+            <div>題數: <span id="current-question">0</span> / 10</div>
+            <div>得分: <span id="score">0</span></div>
+            <div>目前速度: <span id="speed-display">12</span>s</div>
+        </div>
+    </header>
+
+    <div class="game-container" id="game-area">
+        <div class="deadline">警戒線</div>
+        
+        <!-- 設定 / 結算面板 -->
+        <div class="control-panel" id="control-panel">
+            <h2 id="panel-title">打字挑戰 v4</h2>
+            
+            <div id="settings-form">
+                <div class="setting-group">
+                    <label for="speed-slider">每個字母落地時間：<span id="slider-val">12</span> 秒</label>
+                    <div class="slider-container">
+                        <span>3s</span>
+                        <input type="range" id="speed-slider" min="3" max="14" value="12">
+                        <span>14s</span>
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="accel-checkbox">
+                        漸進加速（每答對 3 題縮短 1 秒，最短 3 秒）
+                    </label>
+                </div>
+            </div>
+
+            <div class="result-stats hidden" id="result-stats">
+                <p>完成回合！</p>
+                <p>正確率：<span id="accuracy-val" style="color: var(--success); font-weight: bold;">0%</span></p>
+            </div>
+
+            <button class="start-btn" id="action-btn">開始遊戲</button>
+        </div>
+    </div>
+
+    <script>
+        const KEYS = ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';'];
+        const TOTAL_QUESTIONS = 10;
+
+        // DOM 元素
+        const gameArea = document.getElementById('game-area');
+        const controlPanel = document.getElementById('control-panel');
+        const panelTitle = document.getElementById('panel-title');
+        const settingsForm = document.getElementById('settings-form');
+        const resultStats = document.getElementById('result-stats');
+        const actionBtn = document.getElementById('action-btn');
+        
+        const speedSlider = document.getElementById('speed-slider');
+        const sliderVal = document.getElementById('slider-val');
+        const accelCheckbox = document.getElementById('accel-checkbox');
+        
+        const currentQEl = document.getElementById('current-question');
+        const scoreEl = document.getElementById('score');
+        const speedDisplayEl = document.getElementById('speed-display');
+        const accuracyValEl = document.getElementById('accuracy-val');
+
+        // 遊戲狀態
+        let currentQuestion = 0;
+        let score = 0;
+        let isPlaying = false;
+        let baseSpeed = 12;
+        let currentSpeed = 12;
+        let isAccel = false;
+        
+        let currentChar = '';
+        let currentCharEl = null;
+        let animationFrameId = null;
+        let dropStartTime = null;
+
+        // 更新滑桿顯示數字
+        speedSlider.addEventListener('input', (e) => {
+            sliderVal.textContent = e.target.value;
+        });
+
+        // 開始 / 重新開始遊戲
+        actionBtn.addEventListener('click', () => {
+            startGame();
+        });
+
+        function startGame() {
+            // 載入設定
+            baseSpeed = parseInt(speedSlider.value, 10);
+            currentSpeed = baseSpeed;
+            isAccel = accelCheckbox.checked;
+
+            // 重設數據
+            currentQuestion = 0;
+            score = 0;
+            isPlaying = true;
+
+            // 更新 UI
+            scoreEl.textContent = score;
+            currentQEl.textContent = currentQuestion;
+            speedDisplayEl.textContent = currentSpeed;
+            
+            controlPanel.classList.add('hidden');
+            
+            // 開始第一題
+            nextQuestion();
+        }
+
+        function nextQuestion() {
+            if (currentQuestion >= TOTAL_QUESTIONS) {
+                endGame();
+                return;
+            }
+
+            currentQuestion++;
+            currentQEl.textContent = currentQuestion;
+
+            // 隨機選取字元
+            const randomIndex = Math.floor(Math.random() * KEYS.length);
+            currentChar = KEYS[randomIndex];
+
+            // 產生掉落元素
+            createFallingElement(currentChar);
+        }
+
+        function createFallingElement(char) {
+            if (currentCharEl) {
+                currentCharEl.remove();
+            }
+
+            currentCharEl = document.createElement('div');
+            currentCharEl.className = 'falling-char';
+            currentCharEl.textContent = char;
+
+            // 隨機 X 軸位置 (保留邊距)
+            const areaWidth = gameArea.clientWidth;
+            const minX = 40;
+            const maxX = areaWidth - 40;
+            const randomX = Math.floor(Math.random() * (maxX - minX + 1)) + minX;
+            currentCharEl.style.left = `${randomX}px`;
+
+            gameArea.appendChild(currentCharEl);
+
+            // 動畫設定
+            dropStartTime = performance.now();
+            const maxY = gameArea.clientHeight - 40 - 60; // 邊界線減去字母高度
+
+            function animate(currentTime) {
+                if (!isPlaying) return;
+
+                const elapsed = (currentTime - dropStartTime) / 1000; // 轉為秒
+                const progress = elapsed / currentSpeed;
+
+                if (progress >= 1) {
+                    // 落地未擊中 (Fail)
+                    currentCharEl.style.top = `${maxY}px`;
+                    handleMiss();
+                } else {
+                    currentCharEl.style.top = `${progress * maxY}px`;
+                    animationFrameId = requestAnimationFrame(animate);
+                }
+            }
+
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        function handleHit() {
+            cancelAnimationFrame(animationFrameId);
+            score++;
+            scoreEl.textContent = score;
+
+            // 檢查漸進加速 (每答對 3 題減 1 秒，最低 3 秒)
+            if (isAccel && score > 0 && score % 3 === 0) {
+                if (currentSpeed > 3) {
+                    currentSpeed = Math.max(3, currentSpeed - 1);
+                    speedDisplayEl.textContent = currentSpeed;
+                }
+            }
+
+            cleanUpCurrentChar();
+            nextQuestion();
+        }
+
+        function handleMiss() {
+            cancelAnimationFrame(animationFrameId);
+            cleanUpCurrentChar();
+            nextQuestion();
+        }
+
+        function cleanUpCurrentChar() {
+            if (currentCharEl) {
+                currentCharEl.remove();
+                currentCharEl = null;
+            }
+        }
+
+        // 鍵盤事件監聽
+        window.addEventListener('keydown', (e) => {
+            if (!isPlaying || !currentChar) return;
+
+            const pressedKey = e.key.toUpperCase();
+            
+            if (pressedKey === currentChar) {
+                handleHit();
+            }
+        });
+
+        function endGame() {
+            isPlaying = false;
+            cancelAnimationFrame(animationFrameId);
+            cleanUpCurrentChar();
+
+            // 計算正確率
+            const accuracy = Math.round((score / TOTAL_QUESTIONS) * 100);
+
+            // 顯示結算視窗
+            panelTitle.textContent = "回合結束！";
+            settingsForm.classList.add('hidden');
+            resultStats.classList.remove('hidden');
+            accuracyValEl.textContent = `${accuracy}% (${score}/${TOTAL_QUESTIONS})`;
+            actionBtn.textContent = "再試一次";
+
+            controlPanel.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
